@@ -1,4 +1,5 @@
 import Timer from '../components/Timer.jsx';
+import SkipRoundButton from '../components/SkipRoundButton.jsx';
 import { useGameActions, useGameState } from '../context/GameContext.jsx';
 import { RESULTS_TIME, REACTIONS } from '../constants.js';
 
@@ -45,6 +46,7 @@ export default function ResultsScreen() {
         ))}
       </div>
 
+      <SkipRoundButton />
       <h2 className="subtitle">Resultado da rodada</h2>
       <Timer seconds={timeLeft} total={RESULTS_TIME} />
 

@@ -108,6 +108,7 @@ export class MatchmakingQueue {
       roomCode: code,
       players: room.getPublicPlayers(),
       category: room.category,
+      chatLog: room.chatLog,
     });
     room.startGame();
 

@@ -11,6 +11,8 @@ export const CONFIG = {
   LETTERS: 'ABCDEFGHIJLMNOPQRSTUVZ'.split(''),
   MAX_NAME_LENGTH: 20,
   MAX_SUBMISSION_LENGTH: 40,
+  MAX_CHAT_LENGTH: 200,
+  CHAT_LOG_LIMIT: 50,
   // Categorias de jogo selecionáveis ao criar/entrar na fila. Cada sala tem
   // exatamente uma; a regra do jogo é sempre a mesma, só muda o que os
   // jogadores confirmam. "misterio" sorteia uma categoria diferente

@@ -6,9 +6,10 @@ import ChoosingScreen from './screens/ChoosingScreen.jsx';
 import VotingScreen from './screens/VotingScreen.jsx';
 import ResultsScreen from './screens/ResultsScreen.jsx';
 import GameOverScreen from './screens/GameOverScreen.jsx';
+import ChatPanel from './components/ChatPanel.jsx';
 
 export default function App() {
-  const { screen, phase } = useGameState();
+  const { screen, phase, roomCode } = useGameState();
 
   return (
     <div className="app-shell">
@@ -19,6 +20,7 @@ export default function App() {
       {screen === 'game' && phase === 'voting' && <VotingScreen />}
       {screen === 'game' && phase === 'results' && <ResultsScreen />}
       {screen === 'game_over' && <GameOverScreen />}
+      {roomCode && <ChatPanel />}
     </div>
   );
 }

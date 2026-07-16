@@ -63,6 +63,7 @@ io.on('connection', (socket) => {
       players: room.getPublicPlayers(),
       hostId: room.hostId,
       category: room.category,
+      chatLog: room.chatLog,
     });
   });
 
@@ -81,7 +82,12 @@ io.on('connection', (socket) => {
     socket.data.roomCode = room.code;
     socket.data.playerName = name;
 
-    socket.emit('room_joined', { players: room.getPublicPlayers(), hostId: room.hostId, category: room.category });
+    socket.emit('room_joined', {
+      players: room.getPublicPlayers(),
+      hostId: room.hostId,
+      category: room.category,
+      chatLog: room.chatLog,
+    });
     socket.to(room.code).emit('player_joined', { player: room.getPublicPlayer(player) });
   });
 
@@ -149,6 +155,22 @@ io.on('connection', (socket) => {
     if (room.players.size === 0) roomManager.deleteRoom(room.code);
   });
 
+  socket.on('skip_round', ({ roomCode } = {}) => {
+    const room = roomManager.getRoom(roomCode);
+    if (!room) return socket.emit('error', { message: 'Sala não encontrada.' });
+    if (!room.isPrivate) return socket.emit('error', { message: 'Ação não permitida.' });
+    if (room.hostId !== socket.id) return socket.emit('error', { message: 'Apenas o host pode pular a rodada.' });
+    const result = room.skipRound();
+    if (result?.error) socket.emit('error', { message: result.error });
+  });
+
+  socket.on('chat_message', ({ roomCode, text } = {}) => {
+    const room = roomManager.getRoom(roomCode);
+    if (!room) return socket.emit('error', { message: 'Sala não encontrada.' });
+    const result = room.addChatMessage(socket.id, text);
+    if (result?.error) socket.emit('error', { message: result.error });
+  });
+
   socket.on('restart_game', ({ roomCode } = {}) => {
     const room = roomManager.getRoom(roomCode);
     if (!room) return socket.emit('error', { message: 'Sala não encontrada.' });
@@ -159,6 +181,7 @@ io.on('connection', (socket) => {
       players: room.getPublicPlayers(),
       hostId: room.hostId,
       category: room.category,
+      chatLog: room.chatLog,
     });
   });
 
@@ -181,7 +204,12 @@ io.on('connection', (socket) => {
     socket.data.roomCode = room.code;
     socket.data.playerName = player.name;
 
-    socket.emit('room_joined', { players: room.getPublicPlayers(), hostId: room.hostId, category: room.category });
+    socket.emit('room_joined', {
+      players: room.getPublicPlayers(),
+      hostId: room.hostId,
+      category: room.category,
+      chatLog: room.chatLog,
+    });
     if (room.state !== 'lobby' && room.state !== 'game_over') {
       socket.emit('game_state', room.snapshot());
     }

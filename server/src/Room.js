@@ -23,6 +23,7 @@ export class Room {
     this.votingNames = [];
     this.usedLetters = new Set();
     this.timer = null;
+    this.chatLog = []; // { id, playerId, playerName, text, system, ts }[]
   }
 
   // ---------- Jogadores ----------
@@ -119,6 +120,18 @@ export class Room {
     for (const p of this.players.values()) {
       if (p.disconnectTimer) clearTimeout(p.disconnectTimer);
     }
+  }
+
+  /** O host pula a rodada atual (escolha, votação ou resultado) sem aplicar pontos negativos. */
+  skipRound() {
+    if (this.state === 'lobby' || this.state === 'game_over') {
+      return { error: 'Não é possível pular agora.' };
+    }
+    this._clearTimer();
+    this.round += 1;
+    this.addSystemMessage('⏭ O host pulou a rodada.');
+    this._beginChoosingPhase();
+    return { ok: true };
   }
 
   _beginChoosingPhase() {
@@ -334,6 +347,40 @@ export class Room {
       category: this.category,
       roundCategory: this.roundCategory,
     });
+  }
+
+  // ---------- Chat ----------
+
+  /** Mensagem de um jogador, disponível em qualquer fase da partida. */
+  addChatMessage(playerId, text) {
+    const player = this.players.get(playerId);
+    if (!player) return { error: 'Jogador inválido.' };
+    const trimmed = (text || '').toString().trim().slice(0, CONFIG.MAX_CHAT_LENGTH);
+    if (!trimmed) return { error: 'Mensagem não pode ser vazia.' };
+    this._pushChatMessage({
+      id: `${playerId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      playerId,
+      playerName: player.name,
+      text: trimmed,
+      ts: Date.now(),
+    });
+    return { ok: true };
+  }
+
+  /** Aviso do sistema (ex.: host pulou a rodada), sem autor. */
+  addSystemMessage(text) {
+    this._pushChatMessage({
+      id: `sys-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      system: true,
+      text,
+      ts: Date.now(),
+    });
+  }
+
+  _pushChatMessage(message) {
+    this.chatLog.push(message);
+    if (this.chatLog.length > CONFIG.CHAT_LOG_LIMIT) this.chatLog.shift();
+    this.io.to(this.code).emit('chat_message', message);
   }
 
   /** Reação rápida (emoji) na tela de resultado. Sem histórico — só um relay efêmero. */

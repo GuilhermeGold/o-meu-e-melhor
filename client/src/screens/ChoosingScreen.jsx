@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Timer from '../components/Timer.jsx';
+import SkipRoundButton from '../components/SkipRoundButton.jsx';
 import { useGameActions, useGameState } from '../context/GameContext.jsx';
 import { CHOOSING_TIME, CATEGORY_INFO } from '../constants.js';
 
@@ -37,6 +38,7 @@ export default function ChoosingScreen() {
 
   return (
     <div className="screen screen--choosing">
+      <SkipRoundButton />
       <Timer seconds={timeLeft} total={CHOOSING_TIME} />
 
       <div className="letter-badge">{letter}</div>

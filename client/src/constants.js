@@ -24,3 +24,6 @@ export const CATEGORIES = SELECTABLE_CATEGORIES.map((value) => ({
 
 // Precisa bater com CONFIG.REACTIONS no servidor.
 export const REACTIONS = ['😂', '💀', '🤡', '🔥', '👎', '😱'];
+
+// Precisa bater com CONFIG.MAX_CHAT_LENGTH no servidor.
+export const MAX_CHAT_LENGTH = 200;

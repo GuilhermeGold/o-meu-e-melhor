@@ -1,4 +1,5 @@
 import Timer from '../components/Timer.jsx';
+import SkipRoundButton from '../components/SkipRoundButton.jsx';
 import { useGameActions, useGameState } from '../context/GameContext.jsx';
 import { VOTING_TIME } from '../constants.js';
 
@@ -10,6 +11,7 @@ export default function VotingScreen() {
 
   return (
     <div className="screen screen--voting">
+      <SkipRoundButton />
       <p className="vote-prompt">Vote na pior opção!</p>
       <Timer seconds={timeLeft} total={VOTING_TIME} />
       <h2 className="subtitle">Qual foi a pior escolha?</h2>

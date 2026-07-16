@@ -29,6 +29,7 @@ const initialState = {
 
   gameOver: null, // { loser, losers, finalScores }
   reactions: [], // reações rápidas ao vivo na tela de resultado: { id, playerId, playerName, emoji }
+  chatMessages: [], // { id, playerId, playerName, text, system, ts }
   error: null,
   wasKicked: false,
 };
@@ -85,6 +86,7 @@ function reducer(state, action) {
         gameOver: null,
         roundResults: null,
         phase: null,
+        chatMessages: action.chatLog ?? state.chatMessages,
       };
 
     case 'QUEUE_JOINED':
@@ -116,6 +118,7 @@ function reducer(state, action) {
         playerId: socket.id,
         countdown: null,
         gameOver: null,
+        chatMessages: action.chatLog ?? state.chatMessages,
       };
 
     case 'PLAYER_JOINED':
@@ -133,21 +136,25 @@ function reducer(state, action) {
 
     case 'GAME_STATE': {
       const { phase, letter, timeLeft, players, names, category, roundCategory } = action.state;
-      const phaseChanged = state.phase !== phase;
+      const newLetter = letter ?? state.letter;
+      // Uma nova rodada é detectada pela troca de fase (fluxo normal) OU pela
+      // troca de letra (host pulou a rodada de dentro da mesma fase, ex.:
+      // choosing -> choosing). As duas condições juntas cobrem ambos os casos.
+      const roundChanged = state.phase !== phase || newLetter !== state.letter;
       return {
         ...state,
         screen: 'game',
         phase,
-        letter: letter ?? state.letter,
+        letter: newLetter,
         timeLeft: timeLeft ?? null,
         players: players ?? state.players,
         category: category ?? state.category,
         roundCategory: roundCategory ?? state.roundCategory,
         votingNames: phase === 'voting' ? names ?? state.votingNames : state.votingNames,
-        mySubmission: phase === 'choosing' && phaseChanged ? null : state.mySubmission,
-        myVote: phase === 'voting' && phaseChanged ? null : state.myVote,
-        confirmedCount: phase === 'choosing' && phaseChanged ? 0 : state.confirmedCount,
-        totalToConfirm: phase === 'choosing' && phaseChanged ? 0 : state.totalToConfirm,
+        mySubmission: phase === 'choosing' && roundChanged ? null : state.mySubmission,
+        myVote: phase === 'voting' && roundChanged ? null : state.myVote,
+        confirmedCount: phase === 'choosing' && roundChanged ? 0 : state.confirmedCount,
+        totalToConfirm: phase === 'choosing' && roundChanged ? 0 : state.totalToConfirm,
         roundResults: phase === 'results' ? state.roundResults : null,
       };
     }
@@ -178,6 +185,9 @@ function reducer(state, action) {
 
     case 'REACTION_EXPIRED':
       return { ...state, reactions: state.reactions.filter((r) => r.id !== action.id) };
+
+    case 'CHAT_MESSAGE':
+      return { ...state, chatMessages: [...state.chatMessages, action.message].slice(-100) };
 
     case 'ERROR':
       return { ...state, error: action.message };
@@ -222,16 +232,16 @@ export function GameProvider({ children }) {
       saveSession(roomCode, playerId);
       dispatch({ type: 'ROOM_CREATED', roomCode, playerId, category });
     };
-    const onRoomJoined = ({ players, hostId, category }) => {
+    const onRoomJoined = ({ players, hostId, category, chatLog }) => {
       if (stateRef.current.roomCode) saveSession(stateRef.current.roomCode, socket.id);
-      dispatch({ type: 'ROOM_JOINED', players, hostId, category });
+      dispatch({ type: 'ROOM_JOINED', players, hostId, category, chatLog });
     };
     const onQueueJoined = ({ queueSize, category }) => dispatch({ type: 'QUEUE_JOINED', queueSize, category });
     const onQueueUpdated = ({ queueSize }) => dispatch({ type: 'QUEUE_UPDATED', queueSize });
     const onCountdown = ({ seconds }) => dispatch({ type: 'MATCHMAKING_COUNTDOWN', seconds });
-    const onMatchFound = ({ roomCode, players, category }) => {
+    const onMatchFound = ({ roomCode, players, category, chatLog }) => {
       saveSession(roomCode, socket.id);
-      dispatch({ type: 'MATCH_FOUND', roomCode, players, category });
+      dispatch({ type: 'MATCH_FOUND', roomCode, players, category, chatLog });
     };
     const onPlayerJoined = ({ player }) => dispatch({ type: 'PLAYER_JOINED', player });
     const onPlayerLeft = ({ playerId }) => dispatch({ type: 'PLAYER_LEFT', playerId });
@@ -261,6 +271,7 @@ export function GameProvider({ children }) {
       setTimeout(() => dispatch({ type: 'REACTION_EXPIRED', id: reaction.id }), 2600);
     };
     const onError = ({ message }) => dispatch({ type: 'ERROR', message });
+    const onChatMessage = (message) => dispatch({ type: 'CHAT_MESSAGE', message });
 
     socket.on('connect', onConnect);
     socket.on('room_created', onRoomCreated);
@@ -280,6 +291,7 @@ export function GameProvider({ children }) {
     socket.on('player_eliminated', onPlayerEliminated);
     socket.on('game_over', onGameOver);
     socket.on('reaction', onReaction);
+    socket.on('chat_message', onChatMessage);
     socket.on('error', onError);
 
     return () => {
@@ -301,6 +313,7 @@ export function GameProvider({ children }) {
       socket.off('player_eliminated', onPlayerEliminated);
       socket.off('game_over', onGameOver);
       socket.off('reaction', onReaction);
+      socket.off('chat_message', onChatMessage);
       socket.off('error', onError);
     };
   }, []);
@@ -339,6 +352,12 @@ export function GameProvider({ children }) {
     },
     kickPlayer(playerId) {
       socket.emit('kick_player', { roomCode: stateRef.current.roomCode, playerId });
+    },
+    skipRound() {
+      socket.emit('skip_round', { roomCode: stateRef.current.roomCode });
+    },
+    sendChatMessage(text) {
+      socket.emit('chat_message', { roomCode: stateRef.current.roomCode, text });
     },
     restartGame() {
       socket.emit('restart_game', { roomCode: stateRef.current.roomCode });
