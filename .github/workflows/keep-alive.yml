@@ -2,7 +2,8 @@ name: Keep Render service awake
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    # 6h no horário de Brasília (UTC-3, sem horário de verão) = 9h UTC
+    - cron: '0 9 * * *'
   workflow_dispatch:
 
 jobs:
