@@ -858,6 +858,43 @@ body {
   gap: 10px;
 }
 
+.chat-toggle {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: var(--primary);
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(108, 92, 231, 0.4);
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+.chat-toggle:hover {
+  background: var(--primary-hover);
+}
+.chat-toggle:active {
+  transform: scale(0.95);
+}
+
+.chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .chat-panel {
   width: min(320px, calc(100vw - 32px));
   height: min(420px, calc(100vh - 120px));
@@ -879,6 +916,18 @@ body {
   border-bottom: 1px solid var(--card-border);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.chat-close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.chat-close:hover {
+  color: var(--text);
 }
 
 .chat-messages {
